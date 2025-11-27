@@ -48,3 +48,6 @@ https://sinotrade.github.io/zh/tutor/prepare/token/
     2. src/sj_trading/Strategy添加{新策略}.py
     3. python class name和.cfg file name需一致
     4. __init__參數和.cfg參數名需一致，順序可不一
+
+# 其他
+1. 系統所有log紀錄在src/log下，檔名為當天日期

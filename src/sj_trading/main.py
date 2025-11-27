@@ -12,6 +12,7 @@ from sj_trading.Utils.Strategy import load_strategy, init_strategy, set_order_st
 from sj_trading.Utils.logger import set_logger
 from sj_trading.Order.Manager import OrderFactManager, OrderManager
 from sj_trading.Utils.Contract import ContractResolver
+from sj_trading.Utils.Quote import st_subscribe_quote
 
 def main():
     # TODO1: loop
@@ -54,49 +55,59 @@ def main():
     api.set_order_callback(partial(OrderFactManager.onReceive, ordFactMgr))
     set_order_strategy(api, contract_resolver, config, strategies, ordFactMgr)
     
+    # 訂閱行情
+    quoteRecv = FuturesQuoteReceiver(api=api)
+    st_subscribe_quote(quoteRecv, strategies)
+    
+    print("Start AutoTrading...")
+    print("--------------------")
+    while (1):
+        pass
+        
+    
     # 讀回測設定檔
-    config, interval, type, strategy, fund = load_backtest_config("src/config/backtest")
-    if not config:
-        raise Exception("回測設定檔有誤!")
-    if config.get("symbol") is not None:
-        match config["symbol"]:
-            case "TXFR1":
-                config.pop("symbol")
-                config["contract"] = api.Contracts.Futures.TXF.TXFR1
-            case "MXFR1":
-                config.pop("symbol")
-                config["contract"] = api.Contracts.Futures.MXF.MXFR1
-            case _:
-                raise Exception("找不到對應代號")
+    # config, interval, type, strategy, fund = load_backtest_config("src/config/backtest")
+    # if not config:
+    #     raise Exception("回測設定檔有誤!")
+    # if config.get("symbol") is not None:
+    #     match config["symbol"]:
+    #         case "TXFR1":
+    #             config.pop("symbol")
+    #             config["contract"] = api.Contracts.Futures.TXF.TXFR1
+    #         case "MXFR1":
+    #             config.pop("symbol")
+    #             config["contract"] = api.Contracts.Futures.MXF.MXFR1
+    #         case _:
+    #             raise Exception("找不到對應代號")
 
-    if interval is None:
-        # 未設定interval，則預設用1分k
-        interval = "1T"
-    if type is None:
-        # 未設定type，則預設用k線
-        type = "kbars"
-    if strategy is None or strategy == "RF1":
-        # 未設定strategy, 則預設用RangeFilter_1
-        strategy = RangeFilter_1()
-    elif strategy == "RF2":
-        strategy = RangeFilter_2()
+    # if interval is None:
+    #     # 未設定interval，則預設用1分k
+    #     interval = "1T"
+    # if type is None:
+    #     # 未設定type，則預設用k線
+    #     type = "kbars"
+    # if strategy is None or strategy == "RF1":
+    #     # 未設定strategy, 則預設用RangeFilter_1
+    #     strategy = RangeFilter_1()
+    # elif strategy == "RF2":
+    #     strategy = RangeFilter_2()
         
     
 
-    #DEBUG
-    print(
-        f"Start backtesting with the following configs: {config}, \
-        type={type}, \
-        strategy={strategy.__class__.__name__}, \
-        interval={interval}"
-    )
+    # #DEBUG
+    # print(
+    #     f"Start backtesting with the following configs: {config}, \
+    #     type={type}, \
+    #     strategy={strategy.__class__.__name__}, \
+    #     interval={interval}"
+    # )
 
-    # 回測
-    backTester = BackTester(api)
-    if type == "kbars":
-        backTester.SetKbars(**config)
-        backTester.ToInterval(interval)
-        backTester.RunKbarBacktest(strategy, fund)
-    elif type == "ticks":
-        # TODO
-        pass
+    # # 回測
+    # backTester = BackTester(api)
+    # if type == "kbars":
+    #     backTester.SetKbars(**config)
+    #     backTester.ToInterval(interval)
+    #     backTester.RunKbarBacktest(strategy, fund)
+    # elif type == "ticks":
+    #     # TODO
+    #     pass

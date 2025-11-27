@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 from shioaji.constant import *
-from sj_trading.Order.Order import OrderFactStock, OrderFactFutOpt
+from sj_trading.Order.Order import OrderFactFutOpt, OrderFactStock
 
 # class Price(Enum):
 #     LMT = 0

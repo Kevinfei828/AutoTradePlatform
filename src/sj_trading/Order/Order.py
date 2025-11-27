@@ -27,13 +27,14 @@ class Order:
             return self.trade[-1].order.id
         return "-1"
 
-class OrderFactBase(ABC):
+class OrderFactBase(BaseModel, ABC):
     '''
     負責處理下單和回報/存中間所有Orders
     每個Strategy class持有Factory list
     Strategy呼叫onOrder (下單)
     OrderFactManager呼叫onReceive (回報)
     '''
+    id: int = Field(default=None)
     def setId(self, id: int):
         '''
         自編Order Factory Id
@@ -61,7 +62,7 @@ class OrderFactStock(OrderFactBase):
     def onReceive(self, rpt):
         pass
         
-class OrderFactFutOpt(BaseModel, OrderFactBase):
+class OrderFactFutOpt(OrderFactBase):
     api: object
     quantity: int
     price_type: FuturesPriceType

@@ -1,33 +1,34 @@
 import shioaji as sj
 from collections import defaultdict, deque
+from abc import ABC, abstractmethod
+from pydantic import BaseModel, Field
 from shioaji import TickFOPv1, Exchange
 from .QuoteType import future_dtype, day_max_len
 from sj_trading.Strategy import BaseStrategy
 import pandas as pd
 import numpy as np
 
-class QuoteReceiver:
-    def __init__(self):
-        pass
+class QuoteReceiver(BaseModel, ABC):
+    @abstractmethod
     def AddSubscriber(self, subscriber: BaseStrategy):
         pass
+    
+    @abstractmethod
     def RemoveSubScriber(self, subscriber: BaseStrategy):
         pass
+    
+    @abstractmethod
     def StartReceive(self, target: str):
         pass
         
 class FuturesQuoteReceiver(QuoteReceiver):
-    def __init__(self, api) -> None:
-        super().__init__()
-        self.api = api
-        self.subscriber : dict[int, BaseStrategy] = {}
-        self.nextSubId: int = 0
-        # self.msg_queue = defaultdict(lambda: np.zeros(day_max_len, dtype=future_dtype))
-        # self.api.set_context(self.msg_queue)
-        # self.idx = 0
+    api: object
+    subscriber: dict = Field(default_factory=dict)
+    nextSubId: int = Field(default=0)
+
     def AddSubscriber(self, subscriber: BaseStrategy) -> int:
         self.subscriber[self.nextSubId] = subscriber
-        self.nextSubId = self.nextSubId + 1
+        self.nextSubId += 1
         return self.nextSubId - 1
         
     def RemoveSubScriber(self, index: int) -> None:
@@ -37,11 +38,11 @@ class FuturesQuoteReceiver(QuoteReceiver):
         for sub in self.subscriber.values():
             res = sub.OnTick(tick)
             # TODO OnAfterTick: 根據OnTick結果決定是否下單
-            sub.OnAfterTick(res)
+            # sub.OnAfterTick(res)
         
     def StartReceive(self, target: str):
         self.api.quote.subscribe(
-            self.api.Contracts.Futures.TXF[target],
+            self.api.Contracts.Futures.MXF[target],
             quote_type = sj.constant.QuoteType.Tick,
             version = sj.constant.QuoteVersion.v1,
         )
