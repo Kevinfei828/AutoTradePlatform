@@ -15,10 +15,7 @@ wheels/
 .python-version
 
 src/log/
-strategy/
-src/sj_trading/Strategy/*
-!src/sj_trading/Strategy/BaseStrategy.py
-!src/sj_trading/Strategy/__init__.py
+strategy/*
 
 TODO.md
 
