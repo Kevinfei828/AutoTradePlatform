@@ -10,19 +10,19 @@ https://ithelp.ithome.com.tw/articles/10322227
     cd AutoTradePlatform
     ```
 
-3. 建置專案環境 (安裝python和uv)  
+3. 建置專案環境 (安裝uv)  
     ```
-    install.bat
+    .\install.bat
     ```
 
 4. 申請永豐API金鑰和憑證    
 https://sinotrade.github.io/zh/tutor/prepare/token/
     在目前目錄 (AutoTradePlatform) 下新增.env檔案，並新增以下內容
     ```
-    API_KEY=<前面申請的API Key>
-    SECRET_KEY=<前面申請的Secret Key>
-    CA_CERT_PATH=<前面設定的憑證路徑>
-    CA_PASSWORD=<憑證密碼>
+    API_KEY=your_api_key_here
+    SECRET_KEY=your_secret_key_here
+    CA_CERT_PATH=C:\path\to\certificate.pfx
+    CA_PASSWORD=your_password_here
     ```
 
 5. 將.env載入環境變數  
