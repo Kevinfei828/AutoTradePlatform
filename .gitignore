@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.env
+*.png
+*.pfx*
+.python-version
+
+src/log/
+strategy/
+src/sj_trading/Strategy/*
+!src/sj_trading/Strategy/BaseStrategy.py
+!src/sj_trading/Strategy/__init__.py
+
+TODO.md
+
