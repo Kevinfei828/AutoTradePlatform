@@ -51,3 +51,4 @@ https://sinotrade.github.io/zh/tutor/prepare/token/
 
 # 其他
 1. 系統所有log紀錄在src/log下，檔名為當天日期
+2. 所有設定檔皆可在系統運作時更改，如要改下單和策略設定檔，則需先將Autotrade暫停

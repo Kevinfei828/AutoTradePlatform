@@ -1,3 +1,4 @@
 Strategy/*
 !Strategy/BaseStrategy.py
 !Strategy/__init__.py
+!Strategy/main.py

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from decimal import Decimal
 
 def true_range(high, low, prev_close):
     if prev_close is None:
@@ -18,7 +19,7 @@ def rma(input: pd.Series, length: int) -> pd.Series:
 # def atr_rma(length: int = 14) -> pd.Series:
 #     return rma(tr(), length)
 
-def ema(data: np.array, span: int):
+def ema(data: np.ndarray, span: int):
     alpha = 2 / (span + 1)
     ema = np.zeros_like(data, dtype=float)
     ema[0] = data[0]
@@ -27,12 +28,10 @@ def ema(data: np.array, span: int):
     return ema
 
 def smooth_range(period: int, mult: float, closes: np.ndarray):
-    if len(closes) < period + 2:
+    if len(closes) < period * 2:
         return np.nan
 
-    x = closes
-    diff = np.abs(np.diff(x))
-    # 使用 numpy 的 EMA 實作
+    diff = np.abs(np.diff(closes))
     avrng = ema(diff, period)
     wper = period * 2 - 1
     smrng = ema(avrng, wper) * mult

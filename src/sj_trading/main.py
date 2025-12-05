@@ -1,113 +1,140 @@
 import shioaji as sj
 import logging
 import os
+import threading
+import time
+from multiprocessing import Process, Pool
 from datetime import date
-from functools import partial
 from dotenv import load_dotenv
-from sj_trading.Quote import FuturesQuoteReceiver
-from sj_trading.BackTest import BackTester
-from sj_trading.Strategy import RangeFilter_1, RangeFilter_2
+from sj_trading.BackTest.main import run_backtest
 from sj_trading.Utils.Config import *
-from sj_trading.Utils.Strategy import load_strategy, init_strategy, set_order_strategy
-from sj_trading.Utils.logger import set_logger
-from sj_trading.Order.Manager import OrderFactManager, OrderManager
+from sj_trading.Utils.Strategy import load_st_ct, init_strategy, set_order_strategy
+from sj_trading.Utils.log import set_logger
 from sj_trading.Utils.Contract import ContractResolver
-from sj_trading.Utils.Quote import st_subscribe_quote
+from sj_trading.Event.Handler import EventHandler
+from sj_trading.Utils.log import system_logger
+from sj_trading.Event.io import start_io
+from sj_trading.Quote.main import run_quote_receiver
+from sj_trading.Report.main import run_report
+from sj_trading.Strategy.main import run_strategy
+from sj_trading.Quote.Publisher import QuotePublisher
+from sj_trading.Utils.Constant import *
+
+def exit_program():
+    # 關掉IO thread
+    # shutdown_io_event.set()
+    # join系統內所有thread
+    pass
 
 def main():
-    # TODO1: loop
-    # TODO2: 回測/下單選項
-    set_logger("src/log")
     load_dotenv()
+    # io_thread = threading.Thread(target=start_io, args=(shutdown_io_event))
+    # io_thread.start()
+    
+    # 系統內部events
+    pause_event = threading.Event()
+    end_event = threading.Event()
     
     # 設定永豐API
     api = sj.Shioaji(simulation=True)
     api.login(
-        api_key=os.environ["API_KEY"],
-        secret_key=os.environ["SECRET_KEY"],
+        api_key=os.environ['API_KEY'],
+        secret_key=os.environ['SECRET_KEY'],
         subscribe_trade=True,  # 訂閱回報
         fetch_contract=True
     )
     api.activate_ca(
-        ca_path=os.environ["CA_CERT_PATH"],
-        ca_passwd=os.environ["CA_PASSWORD"],
+        ca_path=os.environ['CA_CERT_PATH'],
+        ca_passwd=os.environ['CA_PASSWORD'],
     )
-    logging.info(f"Login success!")
-    logging.info(f"已獲取商品檔: {api.Contracts}")
+    system_logger.info(f'Login success!')
+    
+    # 系統外部events
+    event_handler = EventHandler(api)
+    event_handler.quote_event.wait()
+    event_handler.quote_event.clear()
+    system_logger.info(f'Fetch Contracts: {api.Contracts}')
+    
     contract_resolver = ContractResolver(api)
     
+    # 讀下單設定檔
+    ord_cfg, exit_cfg = load_order_config(CFG_PATH_ORDER, EXIT_FILE)
+    if not (ord_cfg and exit_cfg):
+        print('尚未設定下單參數!')
+    print(ord_cfg)
+    print(exit_cfg)
     # 讀策略設定檔
-    strategy_cfg = load_strategy("src/config/strategy")
-    if not strategy_cfg:
-        raise Exception("尚未設定任何策略!")
+    contracts, strategies, strategy_cfg = load_st_ct(CFG_PATH_STRATEGY, contract_resolver, exit_cfg)
+    if not strategies:
+        print('尚未設定策略參數!')
     
-    # 初始化strategy class
-    strategies = init_strategy("src/sj_trading/Strategy", strategy_cfg)
+    print(strategy_cfg)
 
-    # 讀下單設定檔, 初始化order class
-    config = load_order_config("src/config/order")
-    if not config:
-        raise Exception("下單設定檔有誤!")
+    st_inst = init_strategy(MAIN_PATH_STRATEGY, strategies, strategy_cfg, contracts)
+    st_name = [type(inst).__name__ for inst in st_inst]
+    print(f'Initialize order instances: {st_name}')
+    
+    print(contracts)
+
+    run_quote_receiver(api, contracts, contract_resolver)
+    event_handler.quote_event.wait()
+    event_handler.quote_event.clear()
     
     # 初始化Managers, 綁回報callback
-    ordMgr = OrderManager()
-    ordFactMgr = OrderFactManager(ordMgr)
-    api.set_order_callback(partial(OrderFactManager.onReceive, ordFactMgr))
-    set_order_strategy(api, contract_resolver, config, strategies, ordFactMgr)
-    
-    # 訂閱行情
-    quoteRecv = FuturesQuoteReceiver(api=api)
-    st_subscribe_quote(quoteRecv, strategies)
-    
-    print("Start AutoTrading...")
-    print("--------------------")
+    ordMgr, ordFactMgr = run_report(api, contract_resolver, ord_cfg, st_inst)
+    publisher = QuotePublisher(contracts) 
+
+    main_str = '>> '
+    usage = '''Usage:
+    [Backtest]
+    1. start Backtest: bt|backtest + all|0|0,1|0,1,
+    [Autotrade]
+    1. start/resume Autotrade: at or autotrade
+    2. pause Autotrade: p or p at or p autotrade
+    3. list all orders: l or l order
+    [System]
+    1. exit program: e or exit
+    '''
+    system_logger.info(f'Fetch contracts: {contracts}')
+    print(usage)
+
     while (1):
-        pass
-        
+        user_input = input(main_str)
+        match user_input.lower():
+            case 'bt' | 'backtest':
+                # TODO
+                bt_config = load_backtest_config(CFG_PATH_BACKTEST)
+                print(strategy_cfg)
+                # contracts, strategies, strategy_cfg = load_st_ct(CFG_PATH_STRATEGY)
+                backtest_thread = threading.Thread(
+                    target=run_backtest,
+                    args=(
+                        api,
+                        bt_config,
+                        contract_resolver,
+                        strategy_cfg,
+                    )
+                )
+                backtest_thread.start()
+                backtest_thread.join()
+            case 'at' | 'autotrade':
+                pause_event.clear()
+                strategy_thread = threading.Thread(
+                    target=run_strategy,
+                    args=(end_event, pause_event, st_inst, publisher)
+                )
+                strategy_thread.start()
+            case 'p' | 'p at' | 'p autotrade':
+                pause_event.set()
+            case 'e' | 'exit':
+                exit_program()
+            case 'l' | 'l order':
+                api.list_trades()
+            case _:
+                print(usage)
     
-    # 讀回測設定檔
-    # config, interval, type, strategy, fund = load_backtest_config("src/config/backtest")
-    # if not config:
-    #     raise Exception("回測設定檔有誤!")
-    # if config.get("symbol") is not None:
-    #     match config["symbol"]:
-    #         case "TXFR1":
-    #             config.pop("symbol")
-    #             config["contract"] = api.Contracts.Futures.TXF.TXFR1
-    #         case "MXFR1":
-    #             config.pop("symbol")
-    #             config["contract"] = api.Contracts.Futures.MXF.MXFR1
-    #         case _:
-    #             raise Exception("找不到對應代號")
-
-    # if interval is None:
-    #     # 未設定interval，則預設用1分k
-    #     interval = "1T"
-    # if type is None:
-    #     # 未設定type，則預設用k線
-    #     type = "kbars"
-    # if strategy is None or strategy == "RF1":
-    #     # 未設定strategy, 則預設用RangeFilter_1
-    #     strategy = RangeFilter_1()
-    # elif strategy == "RF2":
-    #     strategy = RangeFilter_2()
-        
-    
-
-    # #DEBUG
-    # print(
-    #     f"Start backtesting with the following configs: {config}, \
-    #     type={type}, \
-    #     strategy={strategy.__class__.__name__}, \
-    #     interval={interval}"
-    # )
-
-    # # 回測
-    # backTester = BackTester(api)
-    # if type == "kbars":
-    #     backTester.SetKbars(**config)
-    #     backTester.ToInterval(interval)
-    #     backTester.RunKbarBacktest(strategy, fund)
-    # elif type == "ticks":
-    #     # TODO
-    #     pass
+if __name__ == '__main__':
+    main_thread = threading.Thread(target=main)
+    shutdown_io_event = threading.Event()
+    main_thread.start()
+    system_logger.info(f'Main thread start with id: {threading.get_native_id()}')
