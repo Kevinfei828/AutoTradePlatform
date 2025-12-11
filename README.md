@@ -32,7 +32,7 @@ https://sinotrade.github.io/zh/tutor/prepare/token/
 
 6. 執行專案
    ```
-   uv run sj_trading
+   uv run st
    ```
 
 ### 設定檔

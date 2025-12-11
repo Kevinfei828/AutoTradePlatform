@@ -93,7 +93,7 @@ def main():
     2. pause Autotrade: p or p at or p autotrade
     3. list all orders: l or l order
     [System]
-    1. exit program: e or exit or ctrl-D
+    1. exit program: e or exit or ctrl-D (Linux) or ctrl-Z (Windows)
     '''
     system_logger.info(f'Fetch contracts: {contracts}')
     print(usage)

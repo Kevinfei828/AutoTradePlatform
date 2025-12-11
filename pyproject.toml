@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "backtrader>=1.9.78.123",
     "matplotlib>=3.10.7",
     "numpy>=2.3.4",
     "openpyxl>=3.1.5",
