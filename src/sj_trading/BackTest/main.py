@@ -5,6 +5,7 @@ import threading
 import logging
 import sys
 import io
+import csv
 import pandas as pd
 from sj_trading.Strategy import *
 from sj_trading.Utils.Contract import ContractResolver
@@ -95,6 +96,7 @@ def run_backtest(
         backtest_logger.error('Fail to run backtest: please check src/config/backtest')
         return
     
+        
     bt_start = cfg.get(START, bt_dfcfg[START])
     bt_end = cfg.get(END, bt_dfcfg[END])
     bt_symbol = cfg.get(SYMBOL, bt_dfcfg[SYMBOL])
@@ -102,6 +104,17 @@ def run_backtest(
     bt_fund = cfg.get(FUND, bt_dfcfg[FUND])
     bt_interval = cfg.get(INTERVAL, bt_dfcfg[INTERVAL])
     bt_strategy = cfg.get(STRATEGY, bt_dfcfg[STRATEGY])
+    
+    csvfile = open("backtest_output.csv", "w", newline='')
+    fieldnames = [
+        'type', 'bar_dt', 'open', 'high', 'low', 'close', 'volume',
+        'order_ref', 'order_action', 'price', 'size', 'value', 'commission',
+        'exec_dt',
+        'gross_profit', 'net_profit', 'open_dt', 'close_dt'
+    ]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    st_cfg[bt_strategy]['writer'] = writer
     
     backtest_logger.info('New backtest request')
     if cfg.get(TYPE, bt_dfcfg[TYPE]) == 'kbars':
@@ -168,5 +181,7 @@ def run_backtest(
     fig.savefig(f'bt_test.png', bbox_inches='tight')
     log_stat = output_stat(cfg, res[0], cerebro)
     backtest_logger.info('\n' + log_stat)
+    
+    csvfile.close()
 
     

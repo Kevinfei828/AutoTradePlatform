@@ -1,8 +1,9 @@
+import pandas as pd
 from shioaji.data import Ticks, Kbars
 from sj_trading.Utils import Kbar
 from sj_trading.Strategy import BaseStrategy
 from sj_trading.Utils.Plot import plotSignal, plotTrend
-import pandas as pd
+
 
 # class Ticks(BaseModel):
 #     ts: typing.List[int]

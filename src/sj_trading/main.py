@@ -24,7 +24,7 @@ def exit_program():
     # 關掉IO thread
     # shutdown_io_event.set()
     # join系統內所有thread
-    pass
+    exit(0)
 
 def main():
     load_dotenv()
@@ -87,13 +87,13 @@ def main():
     main_str = '>> '
     usage = '''Usage:
     [Backtest]
-    1. start Backtest: bt|backtest + all|0|0,1|0,1,
+    1. start Backtest: bt
     [Autotrade]
     1. start/resume Autotrade: at or autotrade
     2. pause Autotrade: p or p at or p autotrade
     3. list all orders: l or l order
     [System]
-    1. exit program: e or exit
+    1. exit program: e or exit or ctrl-D
     '''
     system_logger.info(f'Fetch contracts: {contracts}')
     print(usage)

@@ -17,4 +17,5 @@ src/log/
 strategy/*
 
 TODO.md
-
+*.csv
+*.log

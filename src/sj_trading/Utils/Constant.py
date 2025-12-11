@@ -7,6 +7,7 @@ CHANGEATR='changeATR'
 CORENAME='name'
 HAOPTION='haoption'
 MARGIN='margin'
+WRITER='writer'
 
 NAMEKEY = 'name'
 PACKAGE = 'sj_trading.Strategy'
