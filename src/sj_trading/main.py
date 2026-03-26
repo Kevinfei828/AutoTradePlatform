@@ -95,8 +95,7 @@ def main():
     
     strategy_thread = threading.Thread(
         target=run_strategy,
-        args=(end_event, pause_event, st_inst, publisher),
-        daemon=True
+        args=(end_event, pause_event, st_inst, publisher)
     )
 
     while (1):
@@ -124,6 +123,7 @@ def main():
             case 'p' | 'p at' | 'p autotrade':
                 pause_event.set()
             case 'e' | 'exit':
+                api.logout()
                 # join系統內所有thread
                 end_event.set()
                 if strategy_thread and strategy_thread.is_alive():
