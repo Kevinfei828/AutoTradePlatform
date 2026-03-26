@@ -20,12 +20,6 @@ from sj_trading.Strategy.main import run_strategy
 from sj_trading.Quote.Publisher import QuotePublisher
 from sj_trading.Utils.Constant import *
 
-def exit_program():
-    # 關掉IO thread
-    # shutdown_io_event.set()
-    # join系統內所有thread
-    exit(0)
-
 def main():
     load_dotenv()
     # io_thread = threading.Thread(target=start_io, args=(shutdown_io_event))
@@ -34,6 +28,7 @@ def main():
     # 系統內部events
     pause_event = threading.Event()
     end_event = threading.Event()
+    shutdown_io_event = threading.Event()
     
     # 設定永豐API
     api = sj.Shioaji(simulation=True)
@@ -97,6 +92,11 @@ def main():
     '''
     system_logger.info(f'Fetch contracts: {contracts}')
     print(usage)
+    
+    strategy_thread = threading.Thread(
+        target=run_strategy,
+        args=(end_event, pause_event, st_inst, publisher)
+    )
 
     while (1):
         user_input = input(main_str)
@@ -119,22 +119,19 @@ def main():
                 backtest_thread.join()
             case 'at' | 'autotrade':
                 pause_event.clear()
-                strategy_thread = threading.Thread(
-                    target=run_strategy,
-                    args=(end_event, pause_event, st_inst, publisher)
-                )
                 strategy_thread.start()
             case 'p' | 'p at' | 'p autotrade':
                 pause_event.set()
             case 'e' | 'exit':
-                exit_program()
+                # join系統內所有thread
+                end_event.set()
+                if strategy_thread and strategy_thread.is_alive():
+                    strategy_thread.join()
+                exit(0)
             case 'l' | 'l order':
                 api.list_trades()
             case _:
                 print(usage)
     
 if __name__ == '__main__':
-    main_thread = threading.Thread(target=main)
-    shutdown_io_event = threading.Event()
-    main_thread.start()
-    system_logger.info(f'Main thread start with id: {threading.get_native_id()}')
+    main()

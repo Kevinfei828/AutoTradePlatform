@@ -25,7 +25,9 @@ class QuotePublisher:
     def notify_all(self, pause: bool):
         # 蒐集到完整k線數據才notify
         # 收到tick的symbol和原先註冊的不一致
-        for symbol, data_q in ticks_data.items():
+        # 用keys()避免loop途中收到新key
+        for symbol in list(ticks_data.keys()):
+            data_q = ticks_data[symbol]
             if symbol not in self.kbar_builders:
                 self.kbar_builders[symbol] = KBarBuilder()
             if data_q:
