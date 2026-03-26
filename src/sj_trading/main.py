@@ -95,7 +95,8 @@ def main():
     
     strategy_thread = threading.Thread(
         target=run_strategy,
-        args=(end_event, pause_event, st_inst, publisher)
+        args=(end_event, pause_event, st_inst, publisher),
+        daemon=True
     )
 
     while (1):
